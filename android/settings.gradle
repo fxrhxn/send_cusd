@@ -1,0 +1,3 @@
+rootProject.name = 'carbonpay_eth'
+
+include ':app'
