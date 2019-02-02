@@ -49,6 +49,7 @@ class AccountCreated extends Component {
   
     componentWillMount(){
 
+        console.log(this.props.privateKey)
     }
 
     closePressed(){
@@ -74,12 +75,12 @@ class AccountCreated extends Component {
         {/* Buttons to create or import acounts */}
         <View
         style={buttonStyles}
-        marginTop={11}
+        marginTop={0}
         >
           </View>
 
           <Label style={{ paddingBottom : 44}}>
-                <Text style={{textAlign : 'center'}}>
+                <Text style={{textAlign : 'center', fontSize : 22}}>
                    Created Account 
                 </Text>                
             </Label>
@@ -91,8 +92,8 @@ class AccountCreated extends Component {
                 </Text>                
             </Label>
 
-            <Label>
-                <Text style={{textAlign : 'center'}}>
+            <Label style={{ marginTop : 33}}>
+                <Text style={{textAlign : 'center',}}>
                     Private Key: {this.props.privateKey}
                 </Text>
 

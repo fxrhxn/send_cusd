@@ -40,6 +40,13 @@ let buttonStyles = {
     marginTop : 33,
 }
 
+let ethers = require('../ethers');
+let web3 = require('../web3');
+
+
+import * as Keychain from 'react-native-keychain';
+
+
 class EnterPrivateKey extends Component {
    
     constructor(props){
@@ -51,6 +58,7 @@ class EnterPrivateKey extends Component {
       
         this.backPressed = this.backPressed.bind(this)
         this.importPressed = this.importPressed.bind(this)
+        this.keyEntered = this.keyEntered.bind(this)
     }
   
     componentWillMount(){
@@ -61,9 +69,71 @@ class EnterPrivateKey extends Component {
         this.props.navigator.pop()
     }
 
+    
+
+    //When import button is pressed.
     importPressed(){
-        console.log('IMPORT PRESSED ')
+        let privateKey = this.state.privateKey
+     
+     try{
+
+        let old_account = new ethers.Wallet(privateKey);
+    
+        //console.log(wallet)
+        //console.log(old_account.signingKey)
+    
+    
+        let eth_Address = old_account.signingKey.address;
+        let private_key = old_account.signingKey.privateKey
+
+        //Save the eth private and public key to the keychain.
+        
+              //JSON that is supporting all chains. 
+              let newJSON = {
+                eth : [
+                    {
+                        privateKey : private_key,
+                        publicKey : eth_Address,             
+                    }
+                ],
+                eos : [] 
+            }
+    
+            //Turn array to string to store in keychain. 
+            let stored_string = JSON.stringify(newJSON);
+    
+    
+            //Store array with keys in keychain. 
+            (async function() {
+    
+                // Store the credentials
+                await Keychain.setGenericPassword('null', stored_string);
+              
+              })();
+              
+              //Push to the imported account page. 
+              this.props.navigator.push({
+                  id : 'ImportAccount',
+                  passProps : {
+                      privateKey : privateKey,
+                      publicKey : eth_Address
+                  }
+              })
+
+     }catch(e){
+        console.log('ERROR')
+     }
+
+   
     }
+
+    //When the private key is entered.
+    keyEntered(e){
+        this.setState({
+            privateKey : e,
+        })
+    }
+
 
     render(){
         return(
@@ -94,7 +164,7 @@ class EnterPrivateKey extends Component {
 
             {/* Text Area to enter text */}
               <Form>
-                <Textarea rowSpan={5} bordered placeholder="Enter Private Key" />
+                <Textarea rowSpan={5} bordered placeholder="Enter Private Key" onChangeText={this.keyEntered} />
 
                
 

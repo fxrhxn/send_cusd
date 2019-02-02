@@ -30,6 +30,8 @@ import {
   Input 
 } from "native-base";
 
+import * as Keychain from 'react-native-keychain';
+
 
 let buttonStyles = {
     flexDirection : 'row',
@@ -37,13 +39,17 @@ let buttonStyles = {
 }
 
 let ethers = require('../ethers');
+let web3 = require('../web3');
 
 class CreateAccount extends Component {
    
     constructor(props){
         super(props)
   
-        this.state = {};
+        this.state = {
+            privateKey : "",
+            publicKey : "" 
+        };
       
         this.createAccount = this.createAccount.bind(this)
         this.importAccount = this.importAccount.bind(this)
@@ -51,9 +57,44 @@ class CreateAccount extends Component {
   
     componentWillMount(){
 
-        // Check the 
+        let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
+
+        // Check if there is any keys stored.  
+        var web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
+
+       // console.log(web3js)
+
+      
+        // web3js.eth.getBalance("0xf7D9830175f9c3dBd4ED8471B0b531A3CFfDac3b").then((res) => {
+        // console.log(res)
+        // })        
+          
+        /* Get the credentials for the */
+          (async () => {
+
+            try {
+                // Retreive the credentials
+                const credentials = await Keychain.getGenericPassword();
+                if (credentials) {
+                
+                    this.props.navigator.push({
+                        id : 'SendPayments'
+                    })
+
+                } else {
+                  // Stay on this page. 
+                }
+              } catch (error) {
+                 // Stay on this page. 
+              }
+
+          })();
+
 
     }
+
+
+    
 
     //Function to create an account. 
     createAccount(){
@@ -74,16 +115,32 @@ class CreateAccount extends Component {
             eth : [
                 {
                     privateKey : privateKey,
-                    publicKey : publicKey,
-                    mnemonic : mnemonic 
+                    publicKey : publicKey,             
                 }
             ],
             eos : [] 
         }
+        // 0xf65edc67222a17bdb9979e9560f75ac34fae6dc30e6d2145458295bf11739390
 
-        console.log(newJSON)
+        //Turn array to string to store in keychain. 
+        let stored_string = JSON.stringify(newJSON);
 
 
+        //Store array with keys in keychain. 
+        (async function() {
+
+            // Store the credentials
+            await Keychain.setGenericPassword('null', stored_string);
+          
+          })();
+
+          this.props.navigator.push({
+              id : 'AccountCreated',
+              passProps : {
+                  privateKey : privateKey,
+                  publicKey : publicKey
+              }
+          })
         
     }
 

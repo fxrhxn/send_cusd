@@ -91,7 +91,7 @@ class ImportAccount extends Component {
                 </Text>                
             </Label>
 
-            <Label>
+            <Label style={{ marginTop : 44}}>
                 <Text style={{textAlign : 'center'}}>
                     Private Key: {this.props.privateKey}
                 </Text>
