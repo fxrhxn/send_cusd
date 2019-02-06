@@ -101,21 +101,25 @@ class CreateAccount extends Component {
 
         console.log('ACCOUNT CREATED')
 
-        //Create a random wallet. 
-        let wallet = new ethers.Wallet.createRandom();
-        let data = wallet.signingKey 
-    
-        /* Data Retrieved from Ethers library */ 
-        let mnemonic = data.mnemonic // Mnemonic seed words
-        let privateKey = data.privateKey // Private key 
-        let publicKey = data.publicKey // Public Key 
+                // // Ropsten URL 
+        let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
+
+        // Create a Web3 instance with the url.   
+        var web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
+
+
+
+        let newAccount = web3js.eth.accounts.create();
+        let newAccount_public = newAccount.address
+        let newAccount_private = newAccount.privateKey
+
 
         //JSON that is supporting all chains. 
         let newJSON = {
             eth : [
                 {
-                    privateKey : privateKey,
-                    publicKey : publicKey,             
+                    privateKey : newAccount_private,
+                    publicKey : newAccount_public,             
                 }
             ],
             eos : [] 
@@ -137,8 +141,8 @@ class CreateAccount extends Component {
           this.props.navigator.push({
               id : 'AccountCreated',
               passProps : {
-                  privateKey : privateKey,
-                  publicKey : publicKey
+                  privateKey : newAccount_private,
+                  publicKey : newAccount_public
               }
           })
         

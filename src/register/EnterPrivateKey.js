@@ -1,3 +1,12 @@
+/*
+
+    Example Test Accounts( NEVER, EVER SEND REAL ETH OR CUSD TO THESE)
+
+    PRIVATE: 0xb806dfb07f98a1dd129924f9ebc1b155cfe6f3ace9ba497dcabc59c090d8a7be
+    PUBLIC : 0x2dABBdE6f99dC21f1046a9d306fb54Fee0c67044
+
+*/
+
 import React, { Component } from 'react';
 import axios from 'axios';
 import {
@@ -77,14 +86,18 @@ class EnterPrivateKey extends Component {
      
      try{
 
-        let old_account = new ethers.Wallet(privateKey);
-    
-        //console.log(wallet)
-        //console.log(old_account.signingKey)
-    
-    
-        let eth_Address = old_account.signingKey.address;
-        let private_key = old_account.signingKey.privateKey
+        // // Ropsten URL 
+        let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
+
+        // Create a Web3 instance with the url.   
+        var web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
+
+       let old_account = web3js.eth.accounts.privateKeyToAccount(privateKey);
+
+       console.log(old_account)
+
+        let eth_Address = old_account.address;
+        let private_key = old_account.privateKey
 
         //Save the eth private and public key to the keychain.
         

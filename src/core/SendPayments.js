@@ -12,7 +12,8 @@ import {
   Modal,
   TouchableOpacity,
   Image,
-  StatusBar
+  StatusBar,
+  ActivityIndicator, 
 } from 'react-native'
 
 import {
@@ -36,6 +37,7 @@ import {
 import * as Keychain from 'react-native-keychain';
 
 
+
 //import _ from 'lodash';
 let EthereumTx = require('../ethereumjs-tx');
 let ethers = require('../ethers');
@@ -49,7 +51,7 @@ let Buffer = require('../buffer').Buffer
 let buttonStyles = {
     flexDirection : 'row',
     justifyContent : 'center',
-    marginTop : 100
+    marginTop : 39
 }
 
 // Account Button Styles 
@@ -65,6 +67,9 @@ let accountInputStyles = {
 }
 
 
+
+
+
 class SendPayments extends Component {
    
   constructor(props){
@@ -77,6 +82,11 @@ class SendPayments extends Component {
           amount : "",
           publicKey : "",
           privateKey : "",
+          eth_balance : "",
+          cusd_balance : "",
+          showSpinner : false,
+          sendingModal : false,
+          sendSuccess : false, 
       };
     
       this.paymentButtonClicked = this.paymentButtonClicked.bind(this)
@@ -87,7 +97,9 @@ class SendPayments extends Component {
       this.backPressed = this.backPressed.bind(this)
   }
 
+
   componentWillMount(){
+
 
     // Get the public and private keys
     (async () => {
@@ -106,8 +118,40 @@ class SendPayments extends Component {
                     publicKey : publicKey 
                 })
 
-            //    console.log(publicKey)
-           //     console.log(privateKey)
+      
+               // // Ropsten URL 
+            let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
+
+            // Create a Web3 instance with the url.   
+            var web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
+
+
+            //Stored address on the keychain. 
+            let stored_address = publicKey;
+
+                    // Contract ABI’s
+                let ABI = require("../contracts/MetaToken.json");
+
+                // Contract Ropsten Addresses
+                let ADDRESS = "0x67450c8908e2701abfa6745be3949ad32acf42d8";
+
+                var jsonFile = ABI;
+                var abi = jsonFile.abi;
+                var deployedAddress = ADDRESS;
+                const instance = new web3js.eth.Contract(abi, deployedAddress);
+                
+                let balance = await instance.methods.balanceOf(stored_address).call()
+                let short_balance = web3.utils.fromWei(balance.toString(), 'ether')
+
+                //Get the balance for the account. 
+                web3js.eth.getBalance(stored_address).then((bal) => {
+                    this.setState({
+                        eth_balance : bal / 1000000000000000000,
+                        cusd_balance : short_balance
+                    })
+                })
+
+
             } else {
 
               this.props.navigator.push({
@@ -115,123 +159,16 @@ class SendPayments extends Component {
               })
             }
           } catch (error) {
-         //   console.log('Keychain couldn\'t be accessed!', error);
-          }
+
+        }
     })()
 
 
 
-
-    // // Create a new ethereum transaction 
- 
- 
-
-    let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
-
-    // Check if there is any keys stored.  
-    var web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
-
-  
-    // web3js.eth.getBalance("0xf7D9830175f9c3dBd4ED8471B0b531A3CFfDac3b").then((res) => {
-    // console.log(res)
-    // })       
     
-        /* CREATES A NEW TESTNET ACCOUNT */ 
-     // let new_account = web3js.eth.accounts.create();
-    
-     // TESTNET PUBLIC AND PRIVATE KEYS 
-     let publicK = "0x837609B2AC529214897908D9974bA2A7b4D4cA18";
-     let privateK = "x2bc282d7d105ae0090bfbf485335946c0d8d66ee490757def96252e1c941d276"
-
-     ///// UNCOMMENT
-    let account = "0xf7D9830175f9c3dBd4ED8471B0b531A3CFfDac3b" // my eth account 
-    let contract = "0x5A0cd6550810ba38743Ee704743cFf135c072f6E" // CUSD metatoken address 
-    let abi = [{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"stablecoin","type":"address"},{"name":"_amount","type":"uint256"}],"name":"convertCarbonDollar","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_stablecoin","type":"address"}],"name":"listToken","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"getDefaultFee","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_from","type":"address"},{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_stablecoin","type":"address"}],"name":"isWhitelisted","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"unpause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"}],"name":"mint","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_amount","type":"uint256"}],"name":"burn","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"claimOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"blacklisted","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"paused","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_subtractedValue","type":"uint256"}],"name":"decreaseApproval","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_blacklistedAccount","type":"address"}],"name":"approveBlacklistedAddressSpender","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"","type":"address"}],"name":"replayNonce","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"stablecoin","type":"address"}],"name":"removeFee","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_addr","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_addedValue","type":"uint256"},{"name":"_signature","type":"bytes"},{"name":"_nonce","type":"uint256"},{"name":"_reward","type":"uint256"}],"name":"metaIncreaseApproval","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"pause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"stablecoin","type":"address"}],"name":"computeFeeRate","outputs":[{"name":"feeRate","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"isMethodEnabled","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"tokenStorage_CD","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"_spender","type":"address"},{"name":"_addedValue","type":"uint256"},{"name":"_nonce","type":"uint256"},{"name":"_reward","type":"uint256"}],"name":"metaApproveHash","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[],"name":"unlock","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_stablecoin","type":"address"}],"name":"unlistToken","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"tokenStorage","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"stablecoin","type":"address"}],"name":"getFee","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"stablecoin","type":"address"},{"name":"_amount","type":"uint256"}],"name":"burnCarbonDollar","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"},{"name":"_nonce","type":"uint256"},{"name":"_reward","type":"uint256"}],"name":"metaTransferHash","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_who","type":"address"},{"name":"_amount","type":"uint256"}],"name":"destroyBlacklistedTokens","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newFee","type":"uint256"}],"name":"setDefaultFee","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newRegulator","type":"address"}],"name":"setRegulator","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_spender","type":"address"},{"name":"_addedValue","type":"uint256"}],"name":"increaseApproval","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[{"name":"_stablecoin","type":"address"},{"name":"_amount","type":"uint256"},{"name":"_nonce","type":"uint256"},{"name":"_reward","type":"uint256"}],"name":"metaBurnHash","outputs":[{"name":"","type":"bytes32"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":true,"inputs":[],"name":"regulator","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"_to","type":"address"},{"name":"_amount","type":"uint256"},{"name":"_signature","type":"bytes"},{"name":"_nonce","type":"uint256"},{"name":"_reward","type":"uint256"}],"name":"metaTransfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":true,"inputs":[],"name":"pendingOwner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},{"constant":false,"inputs":[{"name":"stablecoin","type":"address"},{"name":"_newFee","type":"uint256"}],"name":"setFee","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_stablecoin","type":"address"},{"name":"_amount","type":"uint256"},{"name":"_signature","type":"bytes"},{"name":"_nonce","type":"uint256"},{"name":"_reward","type":"uint256"}],"name":"metaBurnCarbonDollar","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"_amount","type":"uint256"}],"name":"releaseCarbonDollar","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"lock","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[{"name":"_regulator","type":"address"}],"payable":false,"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"name":"user","type":"address"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"ConvertedToWT","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"user","type":"address"},{"indexed":false,"name":"feedAmount","type":"uint256"},{"indexed":false,"name":"chargedFee","type":"uint256"}],"name":"BurnedCUSD","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"account","type":"address"},{"indexed":false,"name":"amount","type":"uint256"}],"name":"DestroyedBlacklistedTokens","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"ApprovedBlacklistedAddressSpender","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Mint","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"burner","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Burn","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"oldRegulator","type":"address"},{"indexed":true,"name":"newRegulator","type":"address"}],"name":"ChangedRegulator","type":"event"},{"anonymous":false,"inputs":[],"name":"Unlocked","type":"event"},{"anonymous":false,"inputs":[],"name":"Locked","type":"event"},{"anonymous":false,"inputs":[],"name":"Pause","type":"event"},{"anonymous":false,"inputs":[],"name":"Unpause","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"}]
-    let to = "0xf7D9830175f9c3dBd4ED8471B0b531A3CFfDac3b"
-
-    web3js.eth.getTransactionCount(publicK, async function (err, nonce) {
-        if(err){
-            console.log(err)
-        }else{
-            
-           let data = new web3js.eth.Contract(abi,contract).methods.transfer(to, 22).encodeABI()
-
-           let nonce = await web3js.eth.getTransactionCount(publicK);
-           let gasPrice = await web3js.eth.getGasPrice()
-           let balance = await web3js.eth.getBalance(publicK)
-        
-
-           let wallet = new ethers.Wallet("0x2bc282d7d105ae0090bfbf485335946c0d8d66ee490757def96252e1c941d276")
-         
-           
-           // All properties are optional
-        let transaction = {
-            nonce: nonce,
-            gasPrice: "0x" + gasPrice,
-            gasLimit: 2100000,
-            to: to,
-            //value:  0,
-            data: data,
-            chainId: 3
-        }
-
-                var tx = new EthereumTx.Tx({
-            nonce: nonce,
-            gasPrice: gasPrice,
-            gasLimit: 2100000,
-            to: to,
-            //value:  0,
-            data: data,
-            chainId: 3
-          });
-
-         let signPromise = wallet.sign(transaction)
-
-         signPromise.then((signedTransaction) => {
-
-            
-             //console.log(signedTransaction)
-
-          web3js.eth.sendSignedTransaction(signedTransaction).on('receipt', (receipt) => { 
-           
-            console.log(receipt)
-            
-            });
-
-         })
-    //     var tx = new EthereumTx.Tx({
-    //         nonce: nonce,
-    //         gasPrice: gasPrice,
-    //         gasLimit: 21000,
-    //         to: to,
-    //         //value:  0,
-    //         data: data,
-    //         chainId: 3
-    //       });
-          
-    //      let key_buffer = Buffer.from('0x2bc282d7d105ae0090bfbf485335946c0d8d66ee490757def96252e1c941d276', 'hex')
-          
-         
-    //   //   console.log(key_buffer.buffer)
-    //      //Sign the transaction with the private key. 
-    //       tx.sign(key_buffer);
-          
-
-    //       // Serialize the transaction. 
-    //       var raw = tx.serialize().toString('hex');
-          
-     
-    //       // Send the web 3 signed transaction. 
-    //       web3js.eth.sendSignedTransaction(raw).on('receipt', function(receipt){ 
-    //           console.log(receipt)
-            
-    //         });
-
-        }
-    })
-///// UNCOMMENT
-
  }
+
+
 
   //Back pressed on modal
   backPressed(){
@@ -294,29 +231,110 @@ class SendPayments extends Component {
   }
 
   //Function that sends CUSD.
-  sendCUSD(){
+  async sendCUSD(){
 
-        Alert.alert(
-        'Success',
-        `Sent CUSD to ${this.state.eth_address}`,
-        [
-        {text: 'OK', onPress: () => { 
-            
-            this.setState({
-                accountModalVisible : false,
-                paymentsModalVisible : false,
-                eth_address : "",
-                amount : "",
-            })
-        }},
-        ],
-        { cancelable: false }
-    )
+      //Show the sending modal. 
+      this.setState({
+        accountModalVisible : false,
+        paymentsModalVisible : false,
+        sendingModal : true,
+    })
+
+    /* Personal credentials to send CUSD. */
+    let from_eth = this.state.publicKey
+    let privateK = this.state.privateKey
+
+    /* Person we will send eth to */
+    let to_eth = this.state.eth_address
     
+    // Amount to send. 
+    let amount = web3.utils.toWei(this.state.amount, 'ether')
+
+     // // Ropsten URL 
+    let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
+
+    // Create a Web3 instance with the url.   
+    let web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
+
+
+        // Contract ABI’s
+    let ABI = require("../contracts/MetaToken.json");
+
+    // Contract Ropsten Addresses
+    let ADDRESS = "0x67450c8908e2701abfa6745be3949ad32acf42d8";
+
+    let jsonFile = ABI;
+    let abi = jsonFile.abi;
+    let deployedAddress = ADDRESS;
+    let cusd = new web3js.eth.Contract(abi, deployedAddress);
+
+
+    //Create an ether wallet with the private key. 
+       let wallet = new ethers.Wallet(privateK)
+     
+       
+       let to = cusd.options.address
+
+       let data = cusd.methods.transfer(to_eth, amount).encodeABI()
+
+      // let gasPrice = web3.utils.toWei('25', 'gwei')
+      let gasPrice = await web3js.eth.getGasPrice()
+
+       let gas = Math.ceil((await cusd.methods.transfer(to_eth, amount).estimateGas({ from: from_eth }))*1.2)
+       
+     //  let nonce = await cusd.methods.replayNonce(from_eth).call();
+
+       let nonce = await web3js.eth.getTransactionCount(from_eth);
+
+
+
+       let transaction = {
+        nonce: nonce,
+        gasPrice: "0x" + gasPrice * 1.40, 
+        gasLimit: 2100000,
+        to: to,
+        value:  0,
+        data: data,
+        chainId: 3
+    }
+    
+    // web3js.eth.signTransaction(tx, privateK).then((s) => {
+    //     console.log(s)
+    // })
+    
+     
+
+    //Sign promise. 
+     let signPromise = wallet.sign(transaction)
+
+   
+
+    //  //Sign promise and return the transaction. 
+     signPromise.then((signedTransaction) => {
+
+
+      web3js.eth.sendSignedTransaction(signedTransaction).on('receipt', (receipt) => {         
+         
+       }).catch((err) => {
+           
+       }).then((final_receipt) => {
+
+            //Make send success true. 
+            this.setState({
+                sendSuccess : true 
+            })
+
+       });
+
+    })
+
+
 
 
 
   }
+  
+
   //Next button is clicked on eth accoutn modal
   nextClicked(){
     
@@ -348,6 +366,34 @@ class SendPayments extends Component {
 
                 </View>
 
+
+        {/* ETH Balance */}
+        <View style={{ flexDirection : 'row', justifyContent:'center', marginTop : 29}}>
+
+
+            <Text style={{ fontSize : 27, textAlign : 'center', fontWeight : '200'}}>
+              ETH Balance:  {Math.round(100 * this.state.eth_balance) / 100}
+            </Text>
+        </View>
+
+        {/* CUSD Balance */}
+        <View style={{ flexDirection : 'row', justifyContent:'center', marginTop : 33}}>
+
+
+            <Text style={{ fontSize : 27, textAlign : 'center', fontWeight : '200'}}>
+            CUSD Balance:  {this.state.cusd_balance}
+            </Text>
+        </View>
+                     {/* CUSD Balance */}
+        <View style={{ flexDirection : 'row', justifyContent:'center', marginTop : 33,}}>
+
+
+            <Text style={{ fontSize : 19, textAlign : 'center', fontWeight : '400', width : 297}}>
+            Address:  {this.state.publicKey}
+            </Text>
+        </View>
+    
+
              {/* Button to clear account */}
             <View style={buttonStyles} >
               <Button onPress={this.clearAccountPressed} style={{ backgroundColor : '#DE1738'}}>
@@ -359,11 +405,18 @@ class SendPayments extends Component {
 
             {/* Button to send the payment */}
             <View style={{ justifyContent : 'center', flexDirection : 'row', marginTop : 33}}>
-              <Button onPress={this.paymentButtonClicked}>
+              <Button onPress={this.paymentButtonClicked} disabled={this.state.cusd_balance == 0 || this.state.eth_balance == 0}>
                 <Text>
-                    Send Payment
+                    Send CUSD
                 </Text>
+ 
               </Button>
+
+            </View>
+
+
+            <View style={{ justifyContent : 'center', flexDirection : 'row', marginTop : 33}}>
+            {(this.state.cusd_balance == 0 || this.state.eth_balance == 0) ? <Text style={{ textAlign : 'center', width : 300}}> Please have some CUSD and ETH before sending any. </Text> : <Text></Text>}
             </View>
 
             {/* Add Account Modal */}
@@ -439,6 +492,7 @@ class SendPayments extends Component {
                             placeholder='Enter Amount to Send' 
                             keyboardType="decimal-pad"
                             autoFocus={true}
+                            onChangeText={(e) => this.setState({ amount : e})}
                             />
                             <Icon name='checkmark-circle' />
                         </Item>
@@ -451,8 +505,95 @@ class SendPayments extends Component {
                                     </Text>
                             </Button>
                         </View>
+
+
+
                     </View>
                 </Modal> 
+
+          {/*  Sending CUSD Modal  */}
+                         <Modal                
+                visible={this.state.sendingModal} setHidden={false}>
+                    <View>
+                
+                 <Header>
+
+                        <Left>                         
+                         </Left>
+                        
+                        <Body>
+                            <Text style={{ marginTop : 9}}>
+                                Sending To: {this.state.eth_address}
+                            </Text>
+                        </Body>
+
+                        <Right>
+                        </Right>
+
+                </Header>
+                     
+                     {this.state.sendSuccess ? <View>
+                         
+                     <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
+                         <Text style={{ textAlign : 'center', fontSize : 22}}>
+                             Successfully Sent CUSD!
+                         </Text>
+                    </View>
+
+                    <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
+                         <Text style={{ textAlign : 'center', fontSize : 22, marginTop : 33}}>
+                             To: {this.state.address}
+                         </Text>
+                    </View>
+
+                    <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
+                         <Text style={{ textAlign : 'center', fontSize : 22, marginTop : 10}}>
+                             Amount: {this.state.amount}
+                         </Text>
+                    </View>
+
+
+                    <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
+                        
+                        <Button onPress={() => {
+                            this.setState({
+                                sendingModal : false,
+                            })
+                        }}>
+                         <Text>
+                             Close
+                         </Text>
+                        </Button>
+                    </View>
+
+
+
+                     </View> : <View>
+
+                        {/* Spinner Icon */}
+                        <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
+                                                                    {/*  Activity Indicator  */}
+                                            <ActivityIndicator size="large" color="#0000ff" />
+                        </View>
+      
+                        <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
+                                                 {/*  Activity Indicator  */}
+                                        <Text>
+                                            Sending {this.state.amount} CUSD to {this.state.address}
+                                        </Text>
+                        </View>
+      
+                     </View>}
+                 
+
+
+
+                    </View>
+                </Modal> 
+
+            
+
+
 
 
           </View>

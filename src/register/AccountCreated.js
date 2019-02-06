@@ -50,6 +50,7 @@ class AccountCreated extends Component {
     componentWillMount(){
 
         console.log(this.props.privateKey)
+        console.log(this.props.publicKey)
     }
 
     closePressed(){
