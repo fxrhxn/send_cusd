@@ -9,6 +9,7 @@ import {
   Text } from 'react-native'
 
 
+
 import { Navigator } from "react-native-deprecated-custom-components"
 
 //Get the components for the core functionality. 
@@ -19,6 +20,19 @@ import AccountCreated from './register/AccountCreated';
 import CreateAccount from './register/CreateAccount';
 import EnterPrivateKey from './register/EnterPrivateKey';
 import ImportAccount from './register/ImportAccount';
+
+
+import {decode, encode} from 'base-64'
+
+if (!global.btoa) {
+    global.btoa = encode;
+}
+
+if (!global.atob) {
+    global.atob = decode;
+}
+
+
 
 
 class FinalApp extends Component {

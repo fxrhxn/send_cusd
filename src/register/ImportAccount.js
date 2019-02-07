@@ -36,6 +36,18 @@ let buttonStyles = {
     justifyContent : 'center',
 }
 
+import {decode, encode} from 'base-64'
+
+if (!global.btoa) {
+    global.btoa = encode;
+}
+
+if (!global.atob) {
+    global.atob = decode;
+}
+
+
+
 
 class ImportAccount extends Component {
    

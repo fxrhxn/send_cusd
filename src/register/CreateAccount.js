@@ -1,3 +1,4 @@
+
 import React, { Component } from 'react';
 import axios from 'axios';
 import {
@@ -11,6 +12,7 @@ import {
   Modal,
   StatusBar
 } from 'react-native'
+
 
 import {
   Container,
@@ -31,6 +33,17 @@ import {
 } from "native-base";
 
 import * as Keychain from 'react-native-keychain';
+
+
+import {decode, encode} from 'base-64'
+
+if (!global.btoa) {
+    global.btoa = encode;
+}
+
+if (!global.atob) {
+    global.atob = decode;
+}
 
 
 let buttonStyles = {

@@ -19,6 +19,9 @@ const instructions = Platform.select({
 
 import FinalApp from './src/Navigator'; 
 
+import './global'
+
+global.btoa = "btoa"
 
 export default class App extends Component {
   render() {

@@ -67,6 +67,18 @@ let accountInputStyles = {
 }
 
 
+import {decode, encode} from 'base-64'
+
+if (!global.btoa) {
+    global.btoa = encode;
+}
+
+if (!global.atob) {
+    global.atob = decode;
+}
+
+
+
 
 
 
@@ -86,7 +98,8 @@ class SendPayments extends Component {
           cusd_balance : "",
           showSpinner : false,
           sendingModal : false,
-          sendSuccess : false, 
+          sendSuccess : false,
+          isAddress : false, 
       };
     
       this.paymentButtonClicked = this.paymentButtonClicked.bind(this)
@@ -95,79 +108,86 @@ class SendPayments extends Component {
       this.sendCUSD = this.sendCUSD.bind(this) 
       this.clearAccountPressed = this.clearAccountPressed.bind(this)
       this.backPressed = this.backPressed.bind(this)
+      this.refreshBalance = this.refreshBalance.bind(this)
   }
 
 
   componentWillMount(){
 
 
-    // Get the public and private keys
-    (async () => {
-        try {
-            // Retreive the credentials
-            const credentials = await Keychain.getGenericPassword();
-            if (credentials) {
-              
-                let credentials_parsed = JSON.parse(credentials.password)
-                
-                let privateKey = credentials_parsed.eth[0].privateKey 
-                let publicKey = credentials_parsed.eth[0].publicKey 
-
-                this.setState({
-                    privateKey : privateKey,
-                    publicKey : publicKey 
-                })
-
-      
-               // // Ropsten URL 
-            let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
-
-            // Create a Web3 instance with the url.   
-            var web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
-
-
-            //Stored address on the keychain. 
-            let stored_address = publicKey;
-
-                    // Contract ABI’s
-                let ABI = require("../contracts/MetaToken.json");
-
-                // Contract Ropsten Addresses
-                let ADDRESS = "0x67450c8908e2701abfa6745be3949ad32acf42d8";
-
-                var jsonFile = ABI;
-                var abi = jsonFile.abi;
-                var deployedAddress = ADDRESS;
-                const instance = new web3js.eth.Contract(abi, deployedAddress);
-                
-                let balance = await instance.methods.balanceOf(stored_address).call()
-                let short_balance = web3.utils.fromWei(balance.toString(), 'ether')
-
-                //Get the balance for the account. 
-                web3js.eth.getBalance(stored_address).then((bal) => {
-                    this.setState({
-                        eth_balance : bal / 1000000000000000000,
-                        cusd_balance : short_balance
-                    })
-                })
-
-
-            } else {
-
-              this.props.navigator.push({
-                  id : 'CreateAccount'
-              })
-            }
-          } catch (error) {
-
-        }
-    })()
-
-
+    this.refreshBalance();
 
     
  }
 
+    //Function that refreshes the balance. 
+  refreshBalance(){
+
+        // Get the public and private keys
+        (async () => {
+            try {
+                // Retreive the credentials
+                const credentials = await Keychain.getGenericPassword();
+                if (credentials) {
+                  
+                    let credentials_parsed = JSON.parse(credentials.password)
+                    
+                    let privateKey = credentials_parsed.eth[0].privateKey 
+                    let publicKey = credentials_parsed.eth[0].publicKey 
+    
+                    this.setState({
+                        privateKey : privateKey,
+                        publicKey : publicKey 
+                    })
+    
+          
+                   // // Ropsten URL 
+                let ropstenRPC = 'https://ropsten.infura.io/c7b70fc4ec0e4ca599e99b360894b699'
+    
+                // Create a Web3 instance with the url.   
+                var web3js = new web3(new web3.providers.HttpProvider(ropstenRPC));
+    
+    
+                //Stored address on the keychain. 
+                let stored_address = publicKey;
+    
+                        // Contract ABI’s
+                    let ABI = require("../contracts/MetaToken.json");
+    
+                    // Contract Ropsten Addresses
+                    let ADDRESS = "0x67450c8908e2701abfa6745be3949ad32acf42d8";
+    
+                    var jsonFile = ABI;
+                    var abi = jsonFile.abi;
+                    var deployedAddress = ADDRESS;
+                    const instance = new web3js.eth.Contract(abi, deployedAddress);
+                    
+                    let balance = await instance.methods.balanceOf(stored_address).call()
+                    let short_balance = web3.utils.fromWei(balance.toString(), 'ether')
+    
+                    //Get the balance for the account. 
+                    web3js.eth.getBalance(stored_address).then((bal) => {
+                        this.setState({
+                            eth_balance : bal / 1000000000000000000,
+                            cusd_balance : short_balance
+                        })
+                    })
+    
+    
+                } else {
+    
+                  this.props.navigator.push({
+                      id : 'CreateAccount'
+                  })
+                }
+              } catch (error) {
+    
+            }
+        })()
+    
+    
+
+  }
 
 
   //Back pressed on modal
@@ -347,7 +367,18 @@ class SendPayments extends Component {
 
   }
 
-  ethChanged(e){
+  ethChanged(e){    
+
+    // Check eth address,
+    if(web3.utils.isAddress(e)){
+        this.setState({
+            isAddress : true
+        })
+    }else{
+        this.setState({
+            isAddress : false
+        })
+    }
 
     this.setState({
         eth_address : e,
@@ -453,7 +484,7 @@ class SendPayments extends Component {
                             </Item>
 
                             <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
-                                <Button onPress={this.nextClicked}>
+                                <Button onPress={this.nextClicked} disabled={!this.state.isAddress}>
                                     <Text>
                                         Next
                                     </Text>
@@ -523,7 +554,7 @@ class SendPayments extends Component {
                         
                         <Body>
                             <Text style={{ marginTop : 9}}>
-                                Sending To: {this.state.eth_address}
+                                Transaction
                             </Text>
                         </Body>
 
@@ -541,8 +572,8 @@ class SendPayments extends Component {
                     </View>
 
                     <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
-                         <Text style={{ textAlign : 'center', fontSize : 22, marginTop : 33}}>
-                             To: {this.state.address}
+                         <Text style={{ textAlign : 'center', fontSize : 14, marginTop : 33, width : 297}}>
+                             To: {this.state.eth_address}
                          </Text>
                     </View>
 
@@ -558,7 +589,12 @@ class SendPayments extends Component {
                         <Button onPress={() => {
                             this.setState({
                                 sendingModal : false,
+                                isAddress : false,
                             })
+
+                            this.refreshBalance();
+
+                            
                         }}>
                          <Text>
                              Close
@@ -578,8 +614,8 @@ class SendPayments extends Component {
       
                         <View style={{ flexDirection : 'row', justifyContent : 'center', marginTop : 55}}>
                                                  {/*  Activity Indicator  */}
-                                        <Text>
-                                            Sending {this.state.amount} CUSD to {this.state.address}
+                                        <Text style={{ textAlign : 'center'}}>
+                                            Sending {this.state.amount} CUSD to {this.state.eth_address}
                                         </Text>
                         </View>
       

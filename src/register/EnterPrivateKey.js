@@ -7,6 +7,8 @@
 
 */
 
+
+
 import React, { Component } from 'react';
 import axios from 'axios';
 import {
@@ -41,6 +43,17 @@ import {
   Input, 
   Label
 } from "native-base";
+
+
+import {decode, encode} from 'base-64'
+
+if (!global.btoa) {
+    global.btoa = encode;
+}
+
+if (!global.atob) {
+    global.atob = decode;
+}
 
 
 let buttonStyles = {
